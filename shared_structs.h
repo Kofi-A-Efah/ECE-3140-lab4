@@ -19,7 +19,7 @@ typedef struct process_state // Our PCB is represented as a node in a linked lis
  * This defines the lock structure
  */
 typedef struct lock_state {
-	int use; // 1 if lock in use, 0 if lock is not in use	
+	int use; // 1 if lock in use, 0 if lock is not in use
 	process_t* blocked_queue;
 } lock_t;
 
@@ -29,5 +29,8 @@ typedef struct lock_state {
 typedef struct cond_var {
 
 } cond_t;
+
+void enqueue(process_t* proc, process_t* queue, int prepend);
+process_t* dequeue(process_t* queue);
 
 #endif
