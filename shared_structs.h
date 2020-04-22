@@ -30,7 +30,9 @@ typedef struct cond_var {
 
 } cond_t;
 
-void enqueue(process_t* proc, process_t* queue, int prepend);
-process_t* dequeue(process_t* queue);
+void blocked_enqueue(process_t* proc, lock_t* l);
+void enqueue(process_t* proc);
+process_t* blocked_dequeue(lock_t* l);
+process_t* dequeue();
 
 #endif
