@@ -1,9 +1,7 @@
-#include "shared_structs.h"
-#include "shared_structs.h"
 #include <stdlib.h>
 #include <MK64F12.h>
 #include "utils.h"
-#include "3140_concur.h"
+#include "lock.h"
 
 /**
  * Initialises the lock structure
@@ -12,14 +10,13 @@
  */
 void l_init(lock_t* l)
 {
-	l = malloc(sizeof(lock_t));
 	l->use = 0;
   l->blocked_queue = NULL;
 }
 
 void l_lock(lock_t* l) // This is an atomic action
 {
-	PIT->CHANNEL[0].TCTRL = 0b10; // enables Interrupts? i forgot the value
+	PIT->CHANNEL[0].TCTRL = 0b01; // enables Interrupts? i forgot the value
 	if ( l->use == 0 )
 		l->use = 1;
 	else {
@@ -28,27 +25,24 @@ void l_lock(lock_t* l) // This is an atomic action
 		process_blocked();
 	}
 
-	PIT->CHANNEL[0].TCTRL = 0b10; // enables Interrupts
+	PIT->CHANNEL[0].TCTRL = 0b11; // enables Interrupts
 }
 
 void l_unlock(lock_t* l) // This is an atomic action
 {
-  PIT->CHANNEL[0].TCTRL = 0b10;
-
-	if ( ( l->blocked_queue == NULL ) && (l->use == 1 ))
-		l->use = 0;
-	else {
-		current_process = blocked_dequeue(l); // dequeue from blocked_queue
-		current_process->blocked = 0;
-    current_process = process_queue;
-		process_queue = current_process; // appends current process to the HEAD of the ready queue.
-		//enqueue(current_process);
+  PIT->CHANNEL[0].TCTRL = 0b01;
+  l->use = 0;
+	
+	process_t* temp = blocked_dequeue(l);
+  
+	if ( temp != NULL ) {
+			temp->blocked = 0;
+			enqueue(temp);
 	}
-
-  PIT->CHANNEL[0].TCTRL = 0b10;
+	PIT->CHANNEL[0].TCTRL = 0b11;
 }
 
-void blocked_enqueue(process_t* proc, lock_t* l)
+void blocked_enqueue(process_t* proc, lock_t* l) 
 {
 	if ( l->blocked_queue == NULL) { // Case 1, when process_queue is empty, we can make the enqueued process the head of the linked list.
 		l->blocked_queue = proc;
@@ -74,3 +68,4 @@ process_t* blocked_dequeue(lock_t* l)
 	temp->next_process = NULL; // breaks off a process ( represented by a node in the linked list ) from the process_queue.
 	return temp;
 }
+

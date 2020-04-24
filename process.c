@@ -7,7 +7,7 @@
 process_t* current_process = NULL;
 process_t* process_queue = NULL;
 
-void enqueue(process_t* proc)
+void enqueue(process_t* proc) 
 {
 	if ( process_queue == NULL) { // Case 1, when process_queue is empty, we can make the enqueued process the head of the linked list.
 		process_queue = proc;
@@ -61,17 +61,19 @@ void process_start()
 	NVIC_EnableIRQ(PIT0_IRQn); // Enable IRQHandler
 	SIM->SCGC6 = SIM_SCGC6_PIT_MASK; //Enables clock to PIT module
 	PIT->MCR = 0; //Enable the whole PIT module
-	PIT->CHANNEL[0].TCTRL = 0b10; // enables Interrupts
-	PIT->CHANNEL[0].LDVAL = SystemCoreClock / 100;
+	PIT->CHANNEL[0].LDVAL = 23000;
 	process_begin();
 }
 
 
 unsigned int* process_select(unsigned int* cursp) {
-    if (current_process->blocked == 1){
-        current_process = dequeue();
-        return current_process->sp;
-    }
+	
+    if ( ( current_process != NULL ) && (current_process->blocked == 1 ) && ( cursp != NULL ) ) {
+        current_process->sp = cursp;
+			  current_process = dequeue();
+			return current_process==NULL ? NULL: current_process->sp;
+       }
+		// when process is blocked...
 
 	else {
 		if ( current_process == NULL && cursp == NULL ) { // when no process is currently running, dequeue
@@ -86,14 +88,15 @@ unsigned int* process_select(unsigned int* cursp) {
 			process_stack_free(current_process->origsp, current_process->size);
 			free(current_process);
 			current_process = dequeue();
-			return current_process->sp;
+			return current_process == NULL ? NULL: current_process->sp;
 			}
 
 		else if ( current_process != NULL && cursp != NULL ) { // process is in the middle of running, enqueue then dequeue
 			current_process->sp = cursp;
-			enqueue(current_process);
+			if (current_process->blocked != 1) enqueue(current_process);
 			current_process = dequeue();
-			return current_process->sp;
+			return current_process == NULL ? NULL: current_process->sp;
 			}
-		}
+	}
 }
+

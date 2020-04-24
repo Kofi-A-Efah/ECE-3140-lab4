@@ -27,11 +27,12 @@ typedef struct lock_state {
  * This defines the conditional variable structure
  */
 typedef struct cond_var {
+	lock_t* l;	
 
 } cond_t;
 
-void blocked_enqueue(process_t* proc, lock_t* l);
-void enqueue(process_t* proc);
+void blocked_enqueue(process_t* proc, lock_t* l); 
+void enqueue(process_t* proc); 
 process_t* blocked_dequeue(lock_t* l);
 process_t* dequeue();
 
